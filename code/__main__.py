@@ -25,7 +25,9 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     Missing 3: Item_Visibility - Item_Identifier; Outlet_Identifier -> Item_Type -> Item_Fat_Content -> Avg
     """
     df = missing_handler(df=df, missing=missing, output=output)
-    print(f"{df[getattr(df, 'Item_Weight').isna()==True]['Item_Identifier'].count()}")
+    print(f"Item_Weight has {df[getattr(df, 'Item_Weight').isna()==True]['Item_Identifier'].count()} missing values.")
+    print(f"Item_Visibility has {df[getattr(df, 'Item_Visibility') == 0]['Item_Identifier'].count()} missing values.")
+    print(f"Outlet_Size has {df[getattr(df, 'Outlet_Size').isna()==True]['Item_Identifier'].count()} missing values.")
     """ Categorical -> Numeric
     Item_Identifier:
     Item_Fat_Content:

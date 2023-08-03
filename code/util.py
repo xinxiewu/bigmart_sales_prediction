@@ -101,7 +101,8 @@ def feature_distribution(df=None, discrete_x=None, continuos_x=None, target=None
     return missing, categorical
 
 # missing_handler()
-def missing_handler(df=None, missing=None, output=r'../public/output', fname='missing_variables.png'):
+def missing_handler(df=None, missing=None, output=r'../public/output', fname='missing_variables.png',
+                    subplots=[3,5], figsize=(50,30)):
     """ Handle features with missing values
 
     Args:
@@ -113,24 +114,24 @@ def missing_handler(df=None, missing=None, output=r'../public/output', fname='mi
     Returns:
         
     """
+    sns.set()
+    fig, axes = plt.subplots(subplots[0], subplots[1], figsize=figsize)
+    ax, i = axes.flatten(), 0
     for miss in missing:
         df_0 = df.copy()
+        # Item_Weight -> Item_Identifier: Same value if have, otherwise industry mean (Fat & Type)
         if miss == 'Item_Weight':
             key = 'Item_Identifier'
-            identifier_cnt_0 = getattr(df, key).unique()
-            identifier_cnt_1 = getattr(df[getattr(df, miss).isna()==False], key).unique()
-            identifier_unique = []
+            identifier_cnt_0, identifier_cnt_1, identifier_unique = getattr(df, key).unique(), getattr(df[getattr(df, miss).isna()==False], key).unique(), []
             for id in identifier_cnt_0:
                 if id not in identifier_cnt_1:
                     identifier_unique.append(id)
             df_0[key] = pd.factorize(getattr(df,key))[0]
             grouped = pd.DataFrame(df_0.groupby(key)[miss].nunique().reset_index())
-            sns.set()
-            fig, axes = plt.subplots(1, 5, figsize=(30, 6))
-            ax = axes.flatten()
-            overall = sns.lineplot(data=grouped, x=key, y=miss, ax=ax[0])
+            overall = sns.lineplot(data=grouped, x=key, y=miss, ax=ax[i])
             overall.set(xlabel=f"{key}", ylabel=f"Distinct Values of {miss}", title=f"Line Chart of {miss} vs {key}")
-            for i, item in enumerate(identifier_unique):
+            i += 1
+            for item in identifier_unique:
                 fat_cont = ['Regular','reg'] if item != 'FDK57' else ['LF', 'Low Fat']
                 if item == 'FDN52':
                     item_type = 'Frozen Foods'
@@ -141,12 +142,69 @@ def missing_handler(df=None, missing=None, output=r'../public/output', fname='mi
                 else:
                     item_type = 'Baking Goods'
                 temp = df.query(f"Item_Fat_Content in {fat_cont} & Item_Type == '{item_type}'")
-                temp_0 = sns.histplot(getattr(temp, miss),kde=True,color='purple',ax=ax[i+1])
+                temp_0 = sns.histplot(getattr(temp, miss),kde=True,color='purple',ax=ax[i])
                 temp_0.set(xlabel=f"{key} of {fat_cont} & {item_type}", ylabel=f"Weight Distribution", 
-                           title=f"Mean: {format(getattr(temp,miss).mean(),'.2f')}, Median: {format(getattr(temp,miss).median(),'.2f')}, STD: {format(getattr(temp,miss).std(),'.2f')}")
+                           title=f"{miss} - Mean: {format(getattr(temp,miss).mean(),'.2f')}, Median: {format(getattr(temp,miss).median(),'.2f')}, STD: {format(getattr(temp,miss).std(),'.2f')}")
+                i += 1
+        # Item_Visibility -> Item_Identifier: Median
+        elif miss == 'Item_Visibility':
+            key, key_new = 'Item_Identifier', 'Item_No'
+            df_0 = df_0[[miss, key]]
+            df_0 = df_0[getattr(df, miss)!=0].sort_values(by=[miss,key])
+            df_0[key_new] = pd.factorize(getattr(df_0,key))[0]
+            avg = df_0.groupby(by=[key, key_new]).mean().reset_index().rename(columns={miss:'mean'})
+            med = df_0.groupby(by=[key, key_new]).median().reset_index().rename(columns={miss:'median'})
+            maxi = df_0.groupby(by=[key, key_new]).max().reset_index().rename(columns={miss:'max'})
+            mini = df_0.groupby(by=[key, key_new]).min().reset_index().rename(columns={miss:'min'})
+            final = avg.merge(med,how='left',on=[key, key_new]).merge(maxi,how='left',on=[key, key_new]).merge(mini,how='left',on=[key, key_new])
+            final = final.sort_values(by=key_new).reset_index()
+            temp = sns.lineplot(data=final[['mean','median','max','min']], ax=ax[i])
+            temp.set(xlabel=f"{key} - factorized", ylabel=f"Trend", title=f"Line Chart of Overall Trend")
+            i += 1
+            temp = sns.lineplot(data=final,x=key_new,y='mean', ax=ax[i])
+            temp.set(xlabel=f"{key} - factorized", ylabel=f"Trend", title=f"Line Chart of Mean Trend")
+            i += 1
+            temp = sns.lineplot(data=final,x=key_new,y='median', ax=ax[i])
+            temp.set(xlabel=f"{key} - factorized", ylabel=f"Trend", title=f"Line Chart of Median Trend")
+            i += 1
+            temp = sns.lineplot(data=final,x=key_new,y='min', ax=ax[i])
+            temp.set(xlabel=f"{key} - factorized", ylabel=f"Trend", title=f"Line Chart of Min Trend")
+            i += 1
+            temp = sns.lineplot(data=final,x=key_new,y='max', ax=ax[i])
+            temp.set(xlabel=f"{key} - factorized", ylabel=f"Trend", title=f"Line Chart of Max Trend")
+            i += 1
+        # Outlet_Size
+        elif miss == 'Outlet_Size':
+            miss = 'Outlet_Size'
+            df_0 = df.copy()[['Outlet_Identifier', 'Outlet_Establishment_Year', miss, 'Outlet_Location_Type', 'Outlet_Type']]\
+                .drop_duplicates().sort_values(by=['Outlet_Identifier']).reset_index().drop(columns=['index'])
+            df_1 = df[['Outlet_Identifier', 'Item_Outlet_Sales']].groupby(by=['Outlet_Identifier']).sum(numeric_only=True).reset_index()
+            df_1['Item_Outlet_Sales'] = df_1['Item_Outlet_Sales']//1000
+            df_2 = df[['Outlet_Identifier', 'Item_Identifier']].groupby(by=['Outlet_Identifier']).count().reset_index()
+            df_final = df_0.merge(df_1,how='left',on='Outlet_Identifier').merge(df_2,how='left',on='Outlet_Identifier')
+            temp = sns.countplot(data=df_final,x='Outlet_Establishment_Year',hue='Outlet_Location_Type',ax=ax[i])
+            temp.set(xlabel=f"Outlet_Establishment_Year", ylabel='Outlet_Location_Type', title=f"Outlet Establishment by Year & Location")
+            temp.legend(loc='lower center')
+            i += 1
+            temp = sns.countplot(data=df_final,x='Outlet_Location_Type',hue='Outlet_Size',ax=ax[i])
+            temp.set(xlabel=f"Outlet_Location_Type", ylabel='Outlet_Size', title=f"Outlet Distribution by Location & Size")
+            temp.legend(loc='lower center')
+            i += 1
+            temp = sns.countplot(data=df_final,x='Outlet_Location_Type',hue='Outlet_Type',ax=ax[i])
+            temp.set(xlabel=f"Outlet_Location_Type", ylabel='Outlet_Type', title=f"Outlet Distribution by Type & Location")
+            temp.legend(loc='lower center')
+            i += 1
+            temp = sns.barplot(data=df_final,x='Outlet_Identifier',y='Item_Outlet_Sales',ax=ax[i])
+            temp.set(xlabel=f"Outlet_Identifier", ylabel='Item_Outlet_Sales', title=f"Outlet Sales (K)")
+            temp.set_xticklabels(temp.get_xticklabels(), rotation=30, fontsize=10)
+            i += 1
+            temp = sns.barplot(data=df_final,x='Outlet_Identifier',y='Item_Identifier',ax=ax[i])
+            temp.set(xlabel=f"Outlet_Identifier", ylabel='Item_Identifier', title=f"# of Items")
+            temp.set_xticklabels(temp.get_xticklabels(), rotation=30, fontsize=10)
+            i += 1
 
-            plt.tight_layout()
-            plt.savefig(os.path.join(output, fname))
+    plt.tight_layout()
+    plt.savefig(os.path.join(output, fname))
     return df
 
 # categorical_conversion()
