@@ -25,6 +25,7 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     Missing 3: Item_Visibility - Item_Identifier; Outlet_Identifier -> Item_Type -> Item_Fat_Content -> Avg
     """
     df = missing_handler(df=df, missing=missing, output=output)
+    print(f"{df[getattr(df, 'Item_Weight').isna()==True]['Item_Identifier'].count()}")
     """ Categorical -> Numeric
     Item_Identifier:
     Item_Fat_Content:
