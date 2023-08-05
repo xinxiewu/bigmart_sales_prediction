@@ -20,25 +20,28 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     print(f"Features with missing values: {missing}\nCategorical features: {categorical}")
     ## (b) Feature Engineering 1: Missing Value & Categorical -> Numeric
     """
-    Missing 1: Item_Weight - Same Item_Identifier has the same weight
-    Missing 2: Outlet_Size - Grocery Store is Small; Supermarket Type 1 is ?
-    Missing 3: Item_Visibility - Item_Identifier; Outlet_Identifier -> Item_Type -> Item_Fat_Content -> Avg
+    Missing 1: Item_Weight - Same Item_Identifier has the same weight; Otherwise, avg of Item_Fat_Content and Item_Type
+    Missing 2: Outlet_Size - Grocery Store is Small; Outlet017 is High; Outlet045 is Medium 
+    Missing 3: Item_Visibility - Avg of Item_Identifier; Outlet_Identifier -> Item_Type -> Item_Fat_Content -> Avg
     """
     df = missing_handler(df=df, missing=missing, output=output)
-    print(f"Item_Weight has {df[getattr(df, 'Item_Weight').isna()==True]['Item_Identifier'].count()} missing values.")
-    print(f"Item_Visibility has {df[getattr(df, 'Item_Visibility') == 0]['Item_Identifier'].count()} missing values.")
-    print(f"Outlet_Size has {df[getattr(df, 'Outlet_Size').isna()==True]['Item_Identifier'].count()} missing values.")
+    if df[getattr(df, 'Item_Weight').isna()==True]['Item_Identifier'].count() == 0 and df[getattr(df, 'Item_Visibility') == 0]['Item_Identifier'].count() == 0 and df[getattr(df, 'Outlet_Size').isna()==True]['Item_Identifier'].count() == 0:
+        print("Fixed Missing Values.")
+    else:
+        print("Missing Values Exist.")
     """ Categorical -> Numeric
-    Item_Identifier:
-    Item_Fat_Content:
-    Item_Type:
-    Outlet_Identifier:
-    Outlet_Size:
-    Outlet_Location_Type:
-    Outlet_Type:
+    Item_Identifier (1,559):
+    Item_Fat_Content (4->2):
+    Item_Type (16):
+    Outlet_Identifier (10):
+    Outlet_Size (3):
+    Outlet_Location_Type (3):
+    Outlet_Type (4):
 
     """
     df = categorical_conversion(df=df, categorical_feature=categorical)
+
+    ## (c) 
 
 
     return

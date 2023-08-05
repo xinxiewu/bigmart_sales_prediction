@@ -146,6 +146,12 @@ def missing_handler(df=None, missing=None, output=r'../public/output', fname='mi
                 temp_0.set(xlabel=f"{key} of {fat_cont} & {item_type}", ylabel=f"Weight Distribution", 
                            title=f"{miss} - Mean: {format(getattr(temp,miss).mean(),'.2f')}, Median: {format(getattr(temp,miss).median(),'.2f')}, STD: {format(getattr(temp,miss).std(),'.2f')}")
                 i += 1
+            df_t = df[df['Item_Weight'].isna()==False][['Item_Identifier', 'Item_Weight']].groupby(by=['Item_Identifier']).mean().reset_index()
+            df_t = pd.concat([df_t, pd.DataFrame.from_dict({'Item_Identifier':['FDN52'], 'Item_Weight':[13.181]})], ignore_index=True)
+            df_t = pd.concat([df_t, pd.DataFrame.from_dict({'Item_Identifier':['FDK57'], 'Item_Weight':[13.707]})], ignore_index=True)
+            df_t = pd.concat([df_t, pd.DataFrame.from_dict({'Item_Identifier':['FDE52'], 'Item_Weight':[13.484]})], ignore_index=True)
+            df_t = pd.concat([df_t, pd.DataFrame.from_dict({'Item_Identifier':['FDQ60'], 'Item_Weight':[12.013]})], ignore_index=True)
+            df = df.merge(df_t, how='left', on='Item_Identifier').drop(columns=['Item_Weight_x']).rename(columns={'Item_Weight_y': 'Item_Weight'})
         # Item_Visibility -> Item_Identifier: Median
         elif miss == 'Item_Visibility':
             key, key_new = 'Item_Identifier', 'Item_No'
@@ -173,6 +179,8 @@ def missing_handler(df=None, missing=None, output=r'../public/output', fname='mi
             temp = sns.lineplot(data=final,x=key_new,y='max', ax=ax[i])
             temp.set(xlabel=f"{key} - factorized", ylabel=f"Trend", title=f"Line Chart of Max Trend")
             i += 1
+            df_t = df[df['Item_Visibility'] != 0][['Item_Identifier', 'Item_Visibility']].groupby(by=['Item_Identifier']).mean().reset_index()
+            df = df.merge(df_t, how='left', on='Item_Identifier').drop(columns=['Item_Visibility_x']).rename(columns={'Item_Visibility_y': 'Item_Visibility'})
         # Outlet_Size
         elif miss == 'Outlet_Size':
             miss = 'Outlet_Size'
@@ -202,6 +210,9 @@ def missing_handler(df=None, missing=None, output=r'../public/output', fname='mi
             temp.set(xlabel=f"Outlet_Identifier", ylabel='Item_Identifier', title=f"# of Items")
             temp.set_xticklabels(temp.get_xticklabels(), rotation=30, fontsize=10)
             i += 1
+            df.loc[getattr(df, 'Outlet_Identifier') == 'OUT010', 'Outlet_Size'] = 'Small'
+            df.loc[getattr(df, 'Outlet_Identifier') == 'OUT017', 'Outlet_Size'] = 'High'
+            df.loc[getattr(df, 'Outlet_Identifier') == 'OUT045', 'Outlet_Size'] = 'Medium'
 
     plt.tight_layout()
     plt.savefig(os.path.join(output, fname))
