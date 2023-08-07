@@ -219,5 +219,5 @@ def missing_handler(df=None, missing=None, output=r'../public/output', fname='mi
     return df
 
 # categorical_conversion()
-def categorical_conversion(df=None, categorical_feature=None):
+def categorical_conversion(df=None, categorical_feature=None, encoding_method=None):
     return df
