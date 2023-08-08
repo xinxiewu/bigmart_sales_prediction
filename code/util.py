@@ -11,6 +11,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+import category_encoders as ce
 
 # download_file(url, output)
 def download_file(url=None, output=r'../public/output'):
@@ -219,5 +220,77 @@ def missing_handler(df=None, missing=None, output=r'../public/output', fname='mi
     return df
 
 # categorical_conversion()
-def categorical_conversion(df=None, categorical_feature=None, encoding_method=None):
+def categorical_conversion(df=None, categorical_feature=None
+                           ,encoding_method={'Item_Identifier': 'one-hot',
+                                             'Item_Fat_Content': 'one-hot',
+                                             'Item_Type': 'one-hot',
+                                             'Outlet_Identifier': 'freq',
+                                             'Outlet_Establishment_Year': 'freq',
+                                             'Outlet_Size': 'ordinal',
+                                             'Outlet_Location_Type': 'ordinal',
+                                             'Outlet_Type': 'ordinal'}, 
+                           output=r'../public/output', fname='categorical_conversion.png',
+                           subplots=[2,4], figsize=(40,20)):
+    """ Convert categorical features into numeric
+
+    Args:
+        df: DataFrame
+        categorical_feature: set, categorical feature names
+        encoding_method, dict, encoding method by feature
+        output: path 
+        fname: output file name
+
+    Returns:
+        resulting dataframe
+    """
+    sns.set()
+    fig, axes = plt.subplots(subplots[0], subplots[1], figsize=figsize)
+    ax, i = axes.flatten(), 0
+
+    for cat in categorical_feature:
+        # Item_Identifier
+        if cat == 'Item_Identifier':
+            df_0 = df[['Item_Identifier','Item_Outlet_Sales']].groupby(by='Item_Identifier').count().reset_index()
+            df_0 = df.merge(df_0, how='left', on='Item_Identifier')[['Item_Identifier', 'Item_Outlet_Sales_y', 'Item_Outlet_Sales_x']]\
+                .rename(columns={'Item_Outlet_Sales_y': 'Item_Freq', 'Item_Outlet_Sales_x': 'Item_Outlet_Sales'})
+            temp = sns.violinplot(data=df_0, x='Item_Freq', y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"Item Identifier Frequency", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of Item_Identifier Frequency")
+            ohc = ce.OneHotEncoder(cols='Item_Freq', return_df=True, use_cat_names=True)
+            df_0 = (ohc.fit_transform(df_0)).drop(columns = ['Item_Outlet_Sales'])
+            df = df.merge(df_0,how='left', on='Item_Identifier').drop(columns=['Item_Freq_10.0']).rename(\
+                columns={'Item_Freq_1.0': 'Item_Identifier_1', 'Item_Freq_2.0': 'Item_Identifier_2', 'Item_Freq_3.0': 'Item_Identifier_3',
+                         'Item_Freq_4.0': 'Item_Identifier_4', 'Item_Freq_5.0': 'Item_Identifier_5', 'Item_Freq_6.0': 'Item_Identifier_6',
+                         'Item_Freq_7.0': 'Item_Identifier_7', 'Item_Freq_8.0': 'Item_Identifier_8', 'Item_Freq_9.0': 'Item_Identifier_9'})
+            i += 1
+        # Item_Fat_Content
+        elif cat == 'Item_Fat_Content':
+            temp = sns.violinplot(data=df, x='Item_Fat_Content', y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"Item_Fat_Content", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of Item_Fat_Content")
+            ohc = ce.OneHotEncoder(cols='Item_Fat_Content', return_df=True, use_cat_names=True)
+            df = (ohc.fit_transform(df)).rename(columns = {'Item_Fat_Content_Low Fat': 'Low_Fat', 'Item_Fat_Content_Regular': 'Regular'})
+            i += 1
+        # Item_Type
+        elif cat == 'Item_Type':
+            temp = sns.violinplot(data=df, x='Item_Type', y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"Item_Type", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of Item_Type")
+            temp.set_xticklabels(temp.get_xticklabels(), rotation=30, fontsize=10)
+            i += 1
+        # Outlet_Identifier
+        elif cat == 'Outlet_Identifier':
+            i += 1
+        # Outlet_Establishment_Year
+        elif cat == 'Outlet_Establishment_Year':
+            i += 1
+        # Outlet_Size
+        elif cat == 'Outlet_Size':
+            i += 1
+        # Outlet_Location_Type
+        elif cat == 'Outlet_Location_Type':
+            i += 1
+        # Outlet_Type
+        elif cat == 'Outlet_Type':
+            i += 1
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(output, fname))
     return df

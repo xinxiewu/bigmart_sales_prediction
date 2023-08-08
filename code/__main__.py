@@ -17,6 +17,7 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     print(f"Loaded modeling data {df.shape} and unseen data {df_unseen.shape}. \n\nEDA Starts")
     ## (a) Feature Distribution, Extreme & Missing Value Detection
     missing, categorical = feature_distribution(df=df, discrete_x=discrete_x, continuos_x=continuos_x, target=target)
+    categorical.add('Outlet_Establishment_Year')
     print(f"Features with missing values: {missing}\nCategorical features: {categorical}")
     ## (b) Feature Engineering 1: Missing Value & Categorical -> Numeric
     """
@@ -25,19 +26,20 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     Missing 3: Item_Visibility - Avg of Item_Identifier; Outlet_Identifier -> Item_Type -> Item_Fat_Content -> Avg
     """
     df = missing_handler(df=df, missing=missing, output=output)
+    df = df.replace({'Item_Fat_Content':{'LF': 'Low Fat', 'low fat': 'Low Fat', 'reg': 'Regular'}})
     if df[getattr(df, 'Item_Weight').isna()==True]['Item_Identifier'].count() == 0 and df[getattr(df, 'Item_Visibility') == 0]['Item_Identifier'].count() == 0 and df[getattr(df, 'Outlet_Size').isna()==True]['Item_Identifier'].count() == 0:
         print("Fixed Missing Values.")
     else:
         print("Missing Values Exist.")
     """ Categorical -> Numeric
-    Item_Identifier (1,559):
-    Item_Fat_Content (4->2):
-    Item_Type (16):
-    Outlet_Identifier (10):
-    Outlet_Size (3):
-    Outlet_Location_Type (3):
-    Outlet_Type (4):
-
+    Item_Identifier (1,559): Frequency -> Violinplot -> One-hot (dummy, drop first or last columns)
+    Item_Fat_Content (4->2): Violinplot -> One-hot (dummy, drop first or last columns)
+    Item_Type (16): Violinplot -> One-hot (dummy, drop first or last columns)
+    Outlet_Identifier (10): Violinplot -> Frequency
+    Outlet_Establishment_Year (9): Violinplot -> Frequency
+    Outlet_Size (3): Violinplot -> Ordinal
+    Outlet_Location_Type (3): Violinplot -> Ordinal
+    Outlet_Type (4): Violinplot -> Ordinal
     """
     df = categorical_conversion(df=df, categorical_feature=categorical)
 
