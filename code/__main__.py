@@ -42,8 +42,13 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     Outlet_Type (4): Violinplot -> Ordinal
     """
     df = categorical_conversion(df=df, categorical_feature=categorical)
-
-    ## (c) 
+    print("Encoded Categorical Variables.")
+    ## (c) Numeric Analysis & Correlation HeatMap
+    continuos_x = continuos_x + (target, 'Outlet_Freq', 'Outlet_Year')
+    df = numeric_conversion(df=df, numeric_feature=continuos_x, target=target)
+    df.to_csv(os.path.join(output, 'data_final.csv'), index=False)
+    print('Scalled Numeric Variables.')
+    print('Data is READY!!!')
 
 
     return
@@ -57,11 +62,11 @@ if __name__ == '__main__':
     """
     Step 2: Call the main program
     """
-    main(fileurl = 'https://raw.githubusercontent.com/xinxiewu/datasets/main/bigmart_sales/Train.csv',
-         fileurl_unseen = 'https://raw.githubusercontent.com/xinxiewu/datasets/main/bigmart_sales/Test.csv',
-         output = r'../public/output',
-         target = 'Item_Outlet_Sales',
-         discrete_x = ('Item_Identifier', 'Item_Fat_Content', 'Item_Type', 'Outlet_Identifier', 
-                          'Outlet_Establishment_Year', 'Outlet_Size', 'Outlet_Location_Type', 'Outlet_Type'),
-         continuos_x = ('Item_Weight', 'Item_Visibility', 'Item_MRP')
-         )
+    # main(fileurl = 'https://raw.githubusercontent.com/xinxiewu/datasets/main/bigmart_sales/Train.csv',
+    #      fileurl_unseen = 'https://raw.githubusercontent.com/xinxiewu/datasets/main/bigmart_sales/Test.csv',
+    #      output = r'../public/output',
+    #      target = 'Item_Outlet_Sales',
+    #      discrete_x = ('Item_Identifier', 'Item_Fat_Content', 'Item_Type', 'Outlet_Identifier', 
+    #                       'Outlet_Establishment_Year', 'Outlet_Size', 'Outlet_Location_Type', 'Outlet_Type'),
+    #      continuos_x = ('Item_Weight', 'Item_Visibility', 'Item_MRP')
+    #      )

@@ -5,6 +5,7 @@ util.py contains custom functions:
     3. feature_distribution: Generate plots of features distribution and save
     4. missing_handler: Handle missing values
     5. categorical_conversion: Convert categorical to numeric
+    6. numeric_conversion: Scaling
 """
 import requests
 import pandas as pd
@@ -12,6 +13,8 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 import category_encoders as ce
+from sklearn import preprocessing
+import numpy as np
 
 # download_file(url, output)
 def download_file(url=None, output=r'../public/output'):
@@ -271,26 +274,90 @@ def categorical_conversion(df=None, categorical_feature=None
             i += 1
         # Item_Type
         elif cat == 'Item_Type':
-            temp = sns.violinplot(data=df, x='Item_Type', y='Item_Outlet_Sales', ax=ax[i])
-            temp.set(xlabel=f"Item_Type", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of Item_Type")
+            temp = sns.violinplot(data=df, x=cat, y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"{cat}", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of {cat}")
             temp.set_xticklabels(temp.get_xticklabels(), rotation=30, fontsize=10)
+            ohc = ce.OneHotEncoder(cols={cat}, return_df=True, use_cat_names=True)
+            df = (ohc.fit_transform(df)).rename(columns = {\
+                'Item_Type_Dairy': 'Dairy', 'Item_Type_Soft Drinks': 'Soft_Drinks', 'Item_Type_Meat': 'Meat',
+                'Item_Type_Fruits and Vegetables': 'Fruits_Vegetables', 'Item_Type_Household': 'Household', 'Item_Type_Baking Goods': 'Baking',
+                'Item_Type_Snack Foods': 'Snack', 'Item_Type_Frozen Foods': 'Fronzen_Foods', 'Item_Type_Seafood': 'Seafood',
+                'Item_Type_Breakfast': 'Breakfast', 'Item_Type_Hard Drinks': 'Hard_Drinks', 'Item_Type_Health and Hygiene': 'Health_Hygiene',
+                'Item_Type_Canned': 'Canned', 'Item_Type_Breads': 'Breads', 'Item_Type_Others': 'Others', 'Item_Type_Starchy Foods': 'Starchy'})
             i += 1
         # Outlet_Identifier
         elif cat == 'Outlet_Identifier':
+            df_0 = df[[cat,'Item_Outlet_Sales']].groupby(by=cat).count().reset_index()
+            df_0 = df.merge(df_0, how='left', on=cat)[[cat, 'Item_Outlet_Sales_y', 'Item_Outlet_Sales_x']]\
+                .rename(columns={'Item_Outlet_Sales_y': 'Outlet_Freq', 'Item_Outlet_Sales_x': 'Item_Outlet_Sales'})
+            temp = sns.violinplot(data=df_0, x='Outlet_Freq', y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"Outlet Identifier Frequency", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of Outlet_Identifier Frequency")
+            df = df.join(df_0, how='left', rsuffix='_x').drop(columns=['Outlet_Identifier_x','Item_Outlet_Sales_x'])
             i += 1
         # Outlet_Establishment_Year
         elif cat == 'Outlet_Establishment_Year':
+            df_0 = df[[cat,'Item_Outlet_Sales']].groupby(by=cat).count().reset_index()
+            df_0 = df.merge(df_0, how='left', on=cat)[[cat, 'Item_Outlet_Sales_y', 'Item_Outlet_Sales_x']]\
+                .rename(columns={'Item_Outlet_Sales_y': 'Outlet_Year', 'Item_Outlet_Sales_x': 'Item_Outlet_Sales'})
+            temp = sns.violinplot(data=df_0, x='Outlet_Year', y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"Outlet Year Frequency", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of Outlet_Year Frequency")
+            df = df.join(df_0, how='left', rsuffix='_x').drop(columns=['Outlet_Establishment_Year_x','Item_Outlet_Sales_x'])
             i += 1
         # Outlet_Size
         elif cat == 'Outlet_Size':
+            temp = sns.violinplot(data=df, x=cat, y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"{cat}", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of {cat}") 
+            df = df.replace({cat:{'Small': 1, 'Medium': 2, 'High': 3}})
             i += 1
         # Outlet_Location_Type
         elif cat == 'Outlet_Location_Type':
+            temp = sns.violinplot(data=df, x=cat, y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"{cat}", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of {cat}") 
+            df = df.replace({cat:{'Tier 1': 1, 'Tier 2': 2, 'Tier 3': 3}})
             i += 1
         # Outlet_Type
         elif cat == 'Outlet_Type':
+            temp = sns.violinplot(data=df, x=cat, y='Item_Outlet_Sales', ax=ax[i])
+            temp.set(xlabel=f"{cat}", ylabel=f"Dist of Item_Outlet_Sales", title=f"Volinplot of {cat}") 
+            temp.set_xticklabels(temp.get_xticklabels(), rotation=30, fontsize=10)
+            df = df.replace({cat:{'Grocery Store': 1, 'Supermarket Type1': 2, 'Supermarket Type2': 3, 'Supermarket Type3': 4}})
             i += 1
 
     plt.tight_layout()
     plt.savefig(os.path.join(output, fname))
+    df = df.drop_duplicates()
+    df.drop(columns=['Item_Identifier', 'Outlet_Identifier', 'Outlet_Establishment_Year'], inplace=True)
+    # df.to_csv(os.path.join(output, 'data_convert.csv'), index=False)
+    return df
+
+# numeric_conversion()
+def numeric_conversion(df=None, numeric_feature=None, target=None,
+                       output=r'../public/output', fname='corr_heatmap.png', figsize=(10,10)):
+    """ Scaling
+
+    Args:
+        df: DataFrame
+        numeric_feature: set, numeric feature names
+        encoding_method, dict, encoding method by feature
+        output: path 
+        fname: output file name
+
+    Returns:
+        resulting dataframe
+    """
+    corr = df[list(numeric_feature)].corr()
+    mask = np.zeros_like(corr)
+    mask[np.triu_indices_from(mask)] = True
+    cmap = sns.diverging_palette(220, 10, as_cmap=True)
+    sns.heatmap(corr, mask=mask, cmap=cmap, annot=True)
+    plt.savefig(os.path.join(output, fname))
+
+    for col in numeric_feature:
+        if col in ('Item_Weight', 'Item_MRP', 'Outlet_Freq'):
+            scaler = preprocessing.MinMaxScaler()
+            df[col] = scaler.fit_transform(pd.DataFrame(df[col]))
+        elif col in ('Outlet_Year', 'Item_Visibility'):
+            scaler = preprocessing.StandardScaler()
+            df[col] = scaler.fit_transform(pd.DataFrame(df[col]))
+
     return df
