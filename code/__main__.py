@@ -46,8 +46,8 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     ## (c) Numeric Analysis & Correlation HeatMap
     continuos_x = continuos_x + (target, 'Outlet_Freq', 'Outlet_Year')
     df = numeric_conversion(df=df, numeric_feature=continuos_x, target=target)
-    df.to_csv(os.path.join(output, 'data_final.csv'), index=False)
     print('Scalled Numeric Variables.')
+    x_train, x_test, y_train, y_test = data_split(df=df, label=target)
     print('Data is READY!!!')
 
 

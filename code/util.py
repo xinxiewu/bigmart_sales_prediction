@@ -6,6 +6,7 @@ util.py contains custom functions:
     4. missing_handler: Handle missing values
     5. categorical_conversion: Convert categorical to numeric
     6. numeric_conversion: Scaling
+    7. data_split: Split dataset into training, validation and testing
 """
 import requests
 import pandas as pd
@@ -15,6 +16,8 @@ import seaborn as sns
 import category_encoders as ce
 from sklearn import preprocessing
 import numpy as np
+from sklearn.model_selection import train_test_split
+import torch
 
 # download_file(url, output)
 def download_file(url=None, output=r'../public/output'):
@@ -361,3 +364,35 @@ def numeric_conversion(df=None, numeric_feature=None, target=None,
             df[col] = scaler.fit_transform(pd.DataFrame(df[col]))
 
     return df
+
+# data_split()
+def data_split(df=None, label=None, validation=False, train_size=0.8, random_state=42, tensor=False):
+    """ Split dataset into training, validation & testing
+    
+    Args:
+        df: DataFrame
+        label: str, label column name
+        validation: boolean, True if a validation set is needed, otherwise False
+        train_size: float, size of training dataset, <= 1
+        random_state: int, random state, default value as 42
+        tensor: boolean, True if need to convert to Tensor, otherwise False
+
+    Returns:
+        DataFrames, split
+    """
+    if validation == False and tensor == False:
+        x_train, x_test, y_train, y_test = train_test_split(df.iloc[:,df.columns != label], df.iloc[:,df.columns == label], 
+                                                            test_size=(1-train_size), random_state=random_state)
+        return x_train, x_test, y_train, y_test
+    elif validation == True and tensor == True:
+        x_train, x_val_te, y_train, y_val_te = train_test_split(df.iloc[:,df.columns != label], df.iloc[:,df.columns == label], 
+                                                            test_size=(1-train_size), random_state=random_state)
+        x_val, x_test, y_val, y_test = train_test_split(x_val_te, y_val_te, 
+                                                            test_size=0.5, random_state=random_state)
+        X_train = torch.Tensor(x_train.values)
+        X_val = torch.Tensor(x_val.values)
+        X_test = torch.Tensor(x_test.values)
+        Y_train = torch.Tensor(y_train.values)
+        Y_val = torch.Tensor(y_val.values)
+        Y_test = torch.Tensor(y_test.values)
+        return X_train, X_val, X_test, Y_train, Y_val, Y_test
