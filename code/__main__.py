@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from util import *
+from models import *
 
 def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x=None, continuos_x=None):
     """
@@ -50,6 +51,33 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     x_train, x_test, y_train, y_test = data_split(df=df, label=target)
     print('Data is READY!!!')
 
+    """
+    Step 2: BaseLine Models
+    """
+    print(f"\nBaseLine Starts")
+    # 2.1 Linear Regression = OLS + Ridge + Lasso
+    print(f"Linear Regression")
+    res_ols = Baseline(model='ols', x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test)
+    res_ridge = Baseline(model='ridge', x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test)
+    res_lasso = Baseline(model='lasso', x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test)
+    # 2.2 Regression Tree
+    print(f"Regression Tree")
+    res_tree = Baseline(model='rt', x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test)
+    # 2.3 SV Regression
+    print(f"Support Vector Regression")
+    res_sv = Baseline(model='svr', x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test)
+    res = pd.concat([res_ols, res_ridge, res_lasso, res_tree, res_sv])
+    print(f"BaseLine Done\n")
+
+    """
+    Step 3: Ensemble Learning
+    """
+
+    """
+    Step 4: Deep Learing
+    """
+
+    res.to_csv(os.path.join(output, 'model_result.csv'), index=False)
 
     return
 

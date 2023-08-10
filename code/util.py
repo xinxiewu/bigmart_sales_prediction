@@ -7,6 +7,7 @@ util.py contains custom functions:
     5. categorical_conversion: Convert categorical to numeric
     6. numeric_conversion: Scaling
     7. data_split: Split dataset into training, validation and testing
+    8. point_eval_metric: Given pred and actual y, generate evaluation metrics: R^2, EVS, MSE, RMSE, MAE
 """
 import requests
 import pandas as pd
@@ -18,6 +19,7 @@ from sklearn import preprocessing
 import numpy as np
 from sklearn.model_selection import train_test_split
 import torch
+from sklearn.metrics import explained_variance_score, mean_absolute_error, mean_squared_error, r2_score, median_absolute_error
 
 # download_file(url, output)
 def download_file(url=None, output=r'../public/output'):
@@ -396,3 +398,27 @@ def data_split(df=None, label=None, validation=False, train_size=0.8, random_sta
         Y_val = torch.Tensor(y_val.values)
         Y_test = torch.Tensor(y_test.values)
         return X_train, X_val, X_test, Y_train, Y_val, Y_test
+    
+# point_eval_metric()
+def point_eval_metric(y_true=None, y_pred=None, model=None):
+    """ Given y_true and y_pred, generate evaluation metrics: R^2, EVS, MSE, RMSE, MAE
+
+    Args:
+        model: str
+        y_true: true target values
+        y_pred: predicted target values
+    
+    Returns:
+        DataFrame with info: 
+            - model, r2_score, exp_var_score, mse, rmse, mean_ae, median_ae
+    """
+    res = {'Model': [model],
+           'R2_Score': [format(r2_score(y_true, y_pred), '.2f')],
+           'Exp_Var_Score': [format(explained_variance_score(y_true, y_pred), '.2f')],
+           'MSE': [format(mean_squared_error(y_true, y_pred, squared=True), '.2f')],
+           'RMSE': [format(mean_squared_error(y_true, y_pred, squared=False), '.2f')],
+           'Mean_Abs_Err': [format(mean_absolute_error(y_true, y_pred), '.2f')],
+           'Median_Abs_Err': [format(median_absolute_error(y_true, y_pred), '.2f')]
+          }
+
+    return pd.DataFrame.from_dict(res)
