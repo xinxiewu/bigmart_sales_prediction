@@ -1,0 +1,6 @@
+Model,R2_Score,Exp_Var_Score,MSE,RMSE,Mean_Abs_Err,Median_Abs_Err
+Linear Regression,0.55,0.55,1217246.62,1103.29,823.98,636.65
+Ridge Regression,0.55,0.55,1215820.98,1102.64,823.54,639.81
+Lasso Regression,0.55,0.55,1215449.81,1102.47,823.31,639.53
+Regression Tree,0.16,0.16,2290585.60,1513.47,1044.83,659.14
+Support Vector Regression,0.02,0.06,2663791.11,1632.11,1232.99,1044.34

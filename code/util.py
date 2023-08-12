@@ -368,7 +368,7 @@ def numeric_conversion(df=None, numeric_feature=None, target=None,
     return df
 
 # data_split()
-def data_split(df=None, label=None, validation=False, train_size=0.8, random_state=42, tensor=False):
+def data_split(df=None, label=None, train_size=0.8, random_state=42, tensor=False):
     """ Split dataset into training, validation & testing
     
     Args:
@@ -382,22 +382,18 @@ def data_split(df=None, label=None, validation=False, train_size=0.8, random_sta
     Returns:
         DataFrames, split
     """
-    if validation == False and tensor == False:
+    if tensor == False:
         x_train, x_test, y_train, y_test = train_test_split(df.iloc[:,df.columns != label], df.iloc[:,df.columns == label], 
                                                             test_size=(1-train_size), random_state=random_state)
         return x_train, x_test, y_train, y_test
-    elif validation == True and tensor == True:
-        x_train, x_val_te, y_train, y_val_te = train_test_split(df.iloc[:,df.columns != label], df.iloc[:,df.columns == label], 
+    elif tensor == True:
+        x_train, x_test, y_train, y_test = train_test_split(df.iloc[:,df.columns != label], df.iloc[:,df.columns == label], 
                                                             test_size=(1-train_size), random_state=random_state)
-        x_val, x_test, y_val, y_test = train_test_split(x_val_te, y_val_te, 
-                                                            test_size=0.5, random_state=random_state)
         X_train = torch.Tensor(x_train.values)
-        X_val = torch.Tensor(x_val.values)
         X_test = torch.Tensor(x_test.values)
         Y_train = torch.Tensor(y_train.values)
-        Y_val = torch.Tensor(y_val.values)
         Y_test = torch.Tensor(y_test.values)
-        return X_train, X_val, X_test, Y_train, Y_val, Y_test
+        return X_train, X_test, Y_train, Y_test
     
 # point_eval_metric()
 def point_eval_metric(y_true=None, y_pred=None, model=None):

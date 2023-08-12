@@ -6,8 +6,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from util import *
 from models import *
+from torch.utils.data import TensorDataset, DataLoader
+from deep_learning import * 
 
-def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x=None, continuos_x=None):
+def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x=None, continuos_x=None,
+         nn_epoch=None, nn_batch_size=None, learning_rate=0.01, nn_cost='MSE', nn_optimizer='Adam', gpu_yn=False):
     """
     Step 1: Data Preparation & EDA
     """
@@ -49,6 +52,7 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     df = numeric_conversion(df=df, numeric_feature=continuos_x, target=target)
     print('Scalled Numeric Variables.')
     x_train, x_test, y_train, y_test = data_split(df=df, label=target)
+    x_train_nn, x_test_nn, y_train_nn, y_test_nn = data_split(df=df, label=target, tensor=True)
     print('Data is READY!!!')
 
     """
@@ -76,9 +80,19 @@ def main(fileurl=None, fileurl_unseen=None, output=None, target=None, discrete_x
     """
     Step 4: Deep Learing
     """
+    print(f"Deep Learning Starts")
+    if gpu_yn and torch.cuda.is_available():
+        device = torch.device('cuda')
+        print(f"Running on GPU")
+    else:
+        device = torch.device('cpu')
+        print(f"Running on CPU")
+    train_loader = DataLoader(TensorDataset(x_train_nn, y_train_nn), batch_size=nn_batch_size, shuffle=True)
+    test_loader = DataLoader(TensorDataset(x_test_nn, y_test_nn), batch_size=nn_batch_size, shuffle=True)
+    training_nn(epochs=nn_epoch, train_loader=train_loader, test_loader=test_loader, device=device, output=output)
 
     res.to_csv(os.path.join(output, 'model_result.csv'), index=False)
-
+    print(f"Project Ends")
     return
 
 
@@ -90,11 +104,12 @@ if __name__ == '__main__':
     """
     Step 2: Call the main program
     """
-    # main(fileurl = 'https://raw.githubusercontent.com/xinxiewu/datasets/main/bigmart_sales/Train.csv',
-    #      fileurl_unseen = 'https://raw.githubusercontent.com/xinxiewu/datasets/main/bigmart_sales/Test.csv',
-    #      output = r'../public/output',
-    #      target = 'Item_Outlet_Sales',
-    #      discrete_x = ('Item_Identifier', 'Item_Fat_Content', 'Item_Type', 'Outlet_Identifier', 
-    #                       'Outlet_Establishment_Year', 'Outlet_Size', 'Outlet_Location_Type', 'Outlet_Type'),
-    #      continuos_x = ('Item_Weight', 'Item_Visibility', 'Item_MRP')
-    #      )
+    main(fileurl = 'https://raw.githubusercontent.com/xinxiewu/datasets/main/bigmart_sales/Train.csv',
+         fileurl_unseen = 'https://raw.githubusercontent.com/xinxiewu/datasets/main/bigmart_sales/Test.csv',
+         output = r'../public/output',
+         target = 'Item_Outlet_Sales',
+         discrete_x = ('Item_Identifier', 'Item_Fat_Content', 'Item_Type', 'Outlet_Identifier', 
+                          'Outlet_Establishment_Year', 'Outlet_Size', 'Outlet_Location_Type', 'Outlet_Type'),
+         continuos_x = ('Item_Weight', 'Item_Visibility', 'Item_MRP'),
+         nn_epoch=500, nn_batch_size=64, learning_rate=0.01, gpu_yn = True
+         )

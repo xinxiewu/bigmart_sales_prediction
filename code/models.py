@@ -13,6 +13,7 @@ models.py contains baseline & ensemble algorithms:
 from util import *
 from sklearn import linear_model, svm, tree
 import numpy as np
+from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, GradientBoostingRegressor, StackingRegressor, VotingRegressor, BaggingRegressor
 
 # Baseline Models
 def Baseline(model=None, x_train=None, y_train=None, x_test=None, y_test=None):
